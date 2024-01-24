@@ -34,7 +34,7 @@ Implement a basic Node.js backend system for an NFT airdrop application using Ex
 
 6. **Bonus**: Replace In-Memory Store(s) with MongoDB.
 7. **Bonus**: Integrate a queue system for asynchronous airdrop processing and batch airdrop processing.
-8. **Bonus**: Implement airdrop function with smart contract interaction using Ether.js / Web3.js.
+8. **Bonus**: Implement airdrop function with smart contract interaction using Ethers.js / Web3.js.
 
 ## Requirements
 
