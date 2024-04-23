@@ -18,9 +18,12 @@
     "@types/body-parser": "^1.19.5",
     "@types/jsonwebtoken": "^9.0.6",
     "body-parser": "^1.20.2",
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "express-jwt": "^8.4.1",
     "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^9.2.0",
+    "mongoose": "^8.3.2",
     "uuid": "^9.0.1",
     "zod": "^3.23.0"
   },
@@ -37,6 +40,11 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["./src/jest.setup.ts"],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/"
+    ]
   }
 }

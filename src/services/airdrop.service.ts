@@ -1,23 +1,34 @@
 // this file handle all business logic for airdrop
-import { AirdropJobStore } from "../models/airdropJob";
+import { FilterQuery } from "mongoose";
+import { AirdropJob, IAirdropJob } from "../models/airdrop-job";
 import {
-  AirdropJob,
+  // AirdropJob,
   CreateAirdropJobDto,
   RedeemNftDto,
   UpdateAirdropJobDto,
 } from "../models/dto";
 
-export class AirdropService {
-  constructor(private readonly airdropJobStore: AirdropJobStore) {}
+async function findOneOrFail(
+  conditions: FilterQuery<IAirdropJob>
+): Promise<IAirdropJob> {
+  const result = await AirdropJob.findOne(conditions);
+  if (!result) {
+    throw new Error("Airdrop job not found");
+  }
+  return result;
+}
 
-  createAirdropJob(createAirdropJobDto: CreateAirdropJobDto): AirdropJob {
-    const airdropJob = this.airdropJobStore.create(createAirdropJobDto);
+export class AirdropService {
+  async createAirdropJob(
+    createAirdropJobDto: CreateAirdropJobDto
+  ): Promise<IAirdropJob> {
+    const airdropJob = await AirdropJob.create(createAirdropJobDto);
     return airdropJob;
   }
 
-  redeemNft(redeemNftDto: RedeemNftDto): AirdropJob {
+  async redeemNft(redeemNftDto: RedeemNftDto): Promise<IAirdropJob> {
     const { redeemCode, recipient } = redeemNftDto;
-    const airdropJob = this.airdropJobStore.findByRedeemCodeOrFail(redeemCode);
+    const airdropJob = await findOneOrFail({ redeemCode });
     if (airdropJob.redeemed) {
       throw new Error("NFT already redeemed");
     }
@@ -26,33 +37,38 @@ export class AirdropService {
     }
     airdropJob.redeemed = true;
     airdropJob.redeemAt = new Date();
-    const result = this.airdropJobStore.update(
-      airdropJob.redeemCode,
-      airdropJob
-    );
+    const result = await airdropJob.save();
 
     return result;
   }
 
-  getAirdropJobs(): AirdropJob[] {
-    return this.airdropJobStore.findAll();
+  async getAirdropJobs(): Promise<IAirdropJob[]> {
+    return await AirdropJob.find();
   }
 
-  getAirdropJobByRedeemCode(redeemCode: string): AirdropJob {
-    return this.airdropJobStore.findByRedeemCodeOrFail(redeemCode);
+  async getAirdropJobByRedeemCode(redeemCode: string): Promise<IAirdropJob> {
+    return await findOneOrFail({ redeemCode });
   }
 
-  updateAirdropJob(
+  async updateAirdropJob(
     redeemCode: string,
     updateAirdropJobDto: UpdateAirdropJobDto
-  ): AirdropJob {
-    return this.airdropJobStore.update(redeemCode, updateAirdropJobDto);
-  }
-
-  deleteAirdropJob(redeemCode: string): void {
-    const result = this.airdropJobStore.delete(redeemCode);
+  ): Promise<IAirdropJob> {
+    const result = await AirdropJob.findOneAndUpdate(
+      { redeemCode },
+      updateAirdropJobDto,
+      { new: true }
+    );
     if (!result) {
       throw new Error("Airdrop job not found");
     }
+    return result;
+  }
+
+  async deleteAirdropJob(
+    redeemCode: string
+  ): Promise<{ deletedCount: number }> {
+    const { deletedCount } = await AirdropJob.deleteOne({ redeemCode });
+    return { deletedCount };
   }
 }

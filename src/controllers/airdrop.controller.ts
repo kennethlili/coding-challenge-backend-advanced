@@ -3,22 +3,19 @@ const router = express.Router();
 import { AirdropService } from "../services/airdrop.service";
 import { Response } from "express";
 import { ApiReponseData } from "../models/api";
-import { AirdropJobStore } from "../models/airdropJob";
 import {
-  CreateAirdropJobDto,
   AirdropJob,
   createAirdropJobDto,
-  RedeemNftDto,
   redeemNftDto,
-  UpdateAirdropJobDto,
   updateAirdropJobDto,
 } from "../models/dto";
 import { expressjwt, Request } from "express-jwt";
 import { JwtItem, Role } from "./login.controller";
+import { IAirdropJob } from "../models/airdrop-job";
 
-const airdropJonStore = new AirdropJobStore();
+// const airdropJonStore = new AirdropJobStore();
 
-const airdropService = new AirdropService(airdropJonStore);
+const airdropService = new AirdropService();
 
 function permissionCheck() {
   return (req: Request<JwtItem>, res: Response, next: NextFunction) => {
@@ -45,19 +42,18 @@ router.post(
     algorithms: ["HS256"],
   }),
   permissionCheck(),
-  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
+  async (
+    req: Request<JwtItem>,
+    res: Response<ApiReponseData<IAirdropJob>>,
+    next: NextFunction
+  ) => {
     try {
-      // permissionCheck(req.path, req.auth);
       const body = req.body;
       createAirdropJobDto.parse(body);
-      const result = airdropService.createAirdropJob(body);
+      const result = await airdropService.createAirdropJob(body);
       res.json({ success: true, data: result });
     } catch (error) {
-      let errorMessage = "Unknown Error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      res.status(500).json({ success: false, errorMessage: errorMessage });
+      next(error);
     }
   }
 );
@@ -70,18 +66,18 @@ router.post(
     algorithms: ["HS256"],
   }),
   permissionCheck(),
-  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
+  async (
+    req: Request<JwtItem>,
+    res: Response<ApiReponseData<IAirdropJob>>,
+    next: NextFunction
+  ) => {
     try {
       const body = req.body;
       redeemNftDto.parse(body);
-      const result = airdropService.redeemNft(body);
+      const result = await airdropService.redeemNft(body);
       res.json({ success: true, data: result });
     } catch (error) {
-      let errorMessage = "Unknown Error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      res.status(500).json({ success: false, errorMessage: errorMessage });
+      next(error);
     }
   }
 );
@@ -96,16 +92,16 @@ router.get(
     algorithms: ["HS256"],
   }),
   permissionCheck(),
-  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob[]>>) => {
+  async (
+    req: Request<JwtItem>,
+    res: Response<ApiReponseData<IAirdropJob[]>>,
+    next: NextFunction
+  ) => {
     try {
-      const result = airdropService.getAirdropJobs();
+      const result = await airdropService.getAirdropJobs();
       res.json({ success: true, data: result });
     } catch (error) {
-      let errorMessage = "Unknown Error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      res.status(500).json({ success: false, errorMessage: errorMessage });
+      next(error);
     }
   }
 );
@@ -118,17 +114,17 @@ router.get(
     algorithms: ["HS256"],
   }),
   permissionCheck(),
-  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
+  async (
+    req: Request<JwtItem>,
+    res: Response<ApiReponseData<IAirdropJob>>,
+    next: NextFunction
+  ) => {
     try {
       const redeemCode = req.params.redeemCode;
-      const result = airdropService.getAirdropJobByRedeemCode(redeemCode);
+      const result = await airdropService.getAirdropJobByRedeemCode(redeemCode);
       res.json({ success: true, data: result });
     } catch (error) {
-      let errorMessage = "Unknown Error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      res.status(500).json({ success: false, errorMessage: errorMessage });
+      next(error);
     }
   }
 );
@@ -141,18 +137,21 @@ router.put(
     algorithms: ["HS256"],
   }),
   permissionCheck(),
-  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
+  async (
+    req: Request<JwtItem>,
+    res: Response<ApiReponseData<IAirdropJob>>,
+    next: NextFunction
+  ) => {
     try {
       const redeemCode = req.params.redeemCode;
       updateAirdropJobDto.parse(req.body);
-      const result = airdropService.updateAirdropJob(redeemCode, req.body);
+      const result = await airdropService.updateAirdropJob(
+        redeemCode,
+        req.body
+      );
       res.json({ success: true, data: result });
     } catch (error) {
-      let errorMessage = "Unknown Error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      res.status(500).json({ success: false, errorMessage: errorMessage });
+      next(error);
     }
   }
 );
@@ -165,17 +164,17 @@ router.delete(
     algorithms: ["HS256"],
   }),
   permissionCheck(),
-  (req: Request<JwtItem>, res: Response<ApiReponseData<undefined>>) => {
+  async (
+    req: Request<JwtItem>,
+    res: Response<ApiReponseData<undefined>>,
+    next: NextFunction
+  ) => {
     try {
       const redeemCode = req.params.redeemCode;
-      const result = airdropService.deleteAirdropJob(redeemCode);
+      const result = await airdropService.deleteAirdropJob(redeemCode);
       res.json({ success: true });
     } catch (error) {
-      let errorMessage = "Unknown Error";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      res.status(500).json({ success: false, errorMessage: errorMessage });
+      next(error);
     }
   }
 );
