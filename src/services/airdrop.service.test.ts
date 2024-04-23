@@ -2,12 +2,14 @@ import { AirdropService } from "./airdrop.service";
 import { CreateAirdropJobDto, RedeemNftDto } from "../models/dto";
 import { AirdropJob, IAirdropJob } from "../models/airdrop-job";
 import { airdropJobSeedData } from "../seed-data/airdrop";
+import { AirdropQueueService } from "./airdrop-queue.service";
 
 describe("AirdropService", () => {
   let airdropService: AirdropService;
 
   beforeAll(async () => {
-    airdropService = new AirdropService();
+    const airdropQueueService = new AirdropQueueService();
+    airdropService = new AirdropService(airdropQueueService);
   });
 
   describe("findOneOrFail", () => {

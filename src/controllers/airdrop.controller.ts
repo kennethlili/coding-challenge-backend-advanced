@@ -4,7 +4,6 @@ import { AirdropService } from "../services/airdrop.service";
 import { Response } from "express";
 import { ApiReponseData } from "../models/api";
 import {
-  AirdropJob,
   createAirdropJobDto,
   redeemNftDto,
   updateAirdropJobDto,
@@ -12,10 +11,11 @@ import {
 import { expressjwt, Request } from "express-jwt";
 import { JwtItem, Role } from "./login.controller";
 import { IAirdropJob } from "../models/airdrop-job";
+import { AirdropQueueService } from "../services/airdrop-queue.service";
 
-// const airdropJonStore = new AirdropJobStore();
 
-const airdropService = new AirdropService();
+const airdropQueueService = new AirdropQueueService();
+const airdropService = new AirdropService(airdropQueueService);
 
 function permissionCheck() {
   return (req: Request<JwtItem>, res: Response, next: NextFunction) => {

@@ -7,6 +7,7 @@ import {
   RedeemNftDto,
   UpdateAirdropJobDto,
 } from "../models/dto";
+import { AirdropQueueService } from "./airdrop-queue.service";
 
 async function findOneOrFail(
   conditions: FilterQuery<IAirdropJob>
@@ -19,6 +20,7 @@ async function findOneOrFail(
 }
 
 export class AirdropService {
+  constructor(private airdropQueueService: AirdropQueueService) {}
   async createAirdropJob(
     createAirdropJobDto: CreateAirdropJobDto
   ): Promise<IAirdropJob> {
@@ -37,7 +39,16 @@ export class AirdropService {
     }
     airdropJob.redeemed = true;
     airdropJob.redeemAt = new Date();
+
     const result = await airdropJob.save();
+
+    // create queue job
+    this.airdropQueueService.createJob({
+      redeemCode: result.redeemCode,
+      recipient: result.recipient,
+      quantity: result.quantity,
+      contractAddress: result.contractAddress,
+    });
 
     return result;
   }
