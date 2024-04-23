@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const addressString = z.string().length(42);
 
@@ -16,7 +16,6 @@ export const airdropJob = z.object({
 
 export type AirdropJob = z.infer<typeof airdropJob>;
 
-
 export const createAirdropJobDto = z.object({
   redeemCode: z.string().length(6),
   quantity: z.number().positive().int(),
@@ -32,7 +31,6 @@ export const redeemNftDto = z.object({
 });
 
 export type RedeemNftDto = z.infer<typeof redeemNftDto>;
-
 
 export const updateAirdropJobDto = z.object({
   redeemed: z.boolean(),
