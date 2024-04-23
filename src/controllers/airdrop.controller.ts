@@ -4,6 +4,9 @@ import { AirdropService } from "../services/airdrop.service";
 import { Response } from "express";
 import { ApiReponseData } from "../models/api";
 import {
+  CreateAirdropJobDto,
+  RedeemNftDto,
+  UpdateAirdropJobDto,
   createAirdropJobDto,
   redeemNftDto,
   updateAirdropJobDto,
@@ -12,7 +15,6 @@ import { expressjwt, Request } from "express-jwt";
 import { JwtItem, Role } from "./login.controller";
 import { IAirdropJob } from "../models/airdrop-job";
 import { AirdropQueueService } from "../services/airdrop-queue.service";
-
 
 const airdropQueueService = new AirdropQueueService();
 const airdropService = new AirdropService(airdropQueueService);
@@ -48,7 +50,7 @@ router.post(
     next: NextFunction
   ) => {
     try {
-      const body = req.body;
+      const body = req.body as CreateAirdropJobDto;
       createAirdropJobDto.parse(body);
       const result = await airdropService.createAirdropJob(body);
       res.json({ success: true, data: result });
@@ -72,7 +74,7 @@ router.post(
     next: NextFunction
   ) => {
     try {
-      const body = req.body;
+      const body = req.body as RedeemNftDto;
       redeemNftDto.parse(body);
       const result = await airdropService.redeemNft(body);
       res.json({ success: true, data: result });
@@ -144,11 +146,10 @@ router.put(
   ) => {
     try {
       const redeemCode = req.params.redeemCode;
-      updateAirdropJobDto.parse(req.body);
-      const result = await airdropService.updateAirdropJob(
-        redeemCode,
-        req.body
-      );
+      const body = req.body as UpdateAirdropJobDto;
+
+      updateAirdropJobDto.parse(body);
+      const result = await airdropService.updateAirdropJob(redeemCode, body);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);
