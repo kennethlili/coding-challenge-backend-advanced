@@ -1,17 +1,36 @@
-import express from "express";
+import express, { NextFunction } from "express";
 const router = express.Router();
 import { AirdropService } from "../services/airdrop.service";
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { ApiReponseData } from "../models/api";
 import { AirdropJobStore } from "../models/airdropJob";
 import { CreateAirdropJobDto, AirdropJob, createAirdropJobDto, RedeemNftDto, redeemNftDto, UpdateAirdropJobDto, updateAirdropJobDto } from "../models/dto";
+import { expressjwt, Request } from "express-jwt";
+import { JwtItem, Role } from "./login.controller";
 
 const airdropJonStore = new AirdropJobStore();
 
-const airdropService = new AirdropService(airdropJonStore)
+const airdropService = new AirdropService(airdropJonStore);
 
-router.post("/generate-redeem-code", (req: Request<{}, {}, CreateAirdropJobDto>, res: Response<ApiReponseData<AirdropJob>>) => {
+function permissionCheck() {
+  return (req: Request<JwtItem>, res: Response, next: NextFunction) => {
+    const jwtItem: JwtItem = req.auth as JwtItem;
+    const { role } = jwtItem;
+    if (req.path === '/generate-redeem-code' || req.path === '/redeem') {
+      //allow all role
+      return next();
+    }
+    if (role !== Role.Admin) {
+      return res.status(403).json({ success: false, errorMessage: 'Permission denied' });
+    }
+    next();
+  }
+}
+
+router.post("/generate-redeem-code",expressjwt({ secret: 'dfffc72c84204af3147e2998255cb8082837b8fcc2d6969965afce1bfb91b39053256a7c78e4d7b0ad2290f4740467e4e0dae87bf8fca7421acd24acc7b42edc', algorithms: ["HS256"] })
+,permissionCheck(),  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
   try {
+    // permissionCheck(req.path, req.auth);
     const body = req.body;
     createAirdropJobDto.parse(body);
     const result = airdropService.createAirdropJob(body);
@@ -25,7 +44,8 @@ router.post("/generate-redeem-code", (req: Request<{}, {}, CreateAirdropJobDto>,
   }
 });
 
-router.post("/redeem", (req: Request<{}, {}, RedeemNftDto>, res: Response<ApiReponseData<AirdropJob>>) => {
+router.post("/redeem",expressjwt({ secret: 'dfffc72c84204af3147e2998255cb8082837b8fcc2d6969965afce1bfb91b39053256a7c78e4d7b0ad2290f4740467e4e0dae87bf8fca7421acd24acc7b42edc', algorithms: ["HS256"] })
+,permissionCheck(),  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
   try {
     const body = req.body;
     redeemNftDto.parse(body);
@@ -40,21 +60,26 @@ router.post("/redeem", (req: Request<{}, {}, RedeemNftDto>, res: Response<ApiRep
   }
 });
 
-//admin request
-router.get("/", (req: Request<{}, {}, {}>, res: Response<ApiReponseData<AirdropJob[]>>) => {
-  try {
-    const result = airdropService.getAirdropJobs();
-    res.json({ success: true, data: result });
-  } catch (error) {
-    let errorMessage = 'Unknown Error'
-    if (error instanceof Error) {
-      errorMessage = error.message;
+// admin request
+// should provide the secret in env, but as this project is for demo purpose, I will hardcode it here
+router.get("/",
+  expressjwt({ secret: 'dfffc72c84204af3147e2998255cb8082837b8fcc2d6969965afce1bfb91b39053256a7c78e4d7b0ad2290f4740467e4e0dae87bf8fca7421acd24acc7b42edc', algorithms: ["HS256"] })
+  ,permissionCheck(), 
+  (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob[]>>) => {
+    try {
+      const result = airdropService.getAirdropJobs();
+      res.json({ success: true, data: result });
+    } catch (error) {
+      let errorMessage = 'Unknown Error'
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      res.status(500).json({ success: false, errorMessage: errorMessage });
     }
-    res.status(500).json({ success: false, errorMessage: errorMessage });
-  }
-});
+  });
 
-router.get("/:redeemCode", (req: Request<{ redeemCode: string }, {}, {}>, res: Response<ApiReponseData<AirdropJob>>) => {
+router.get("/:redeemCode", expressjwt({ secret: 'dfffc72c84204af3147e2998255cb8082837b8fcc2d6969965afce1bfb91b39053256a7c78e4d7b0ad2290f4740467e4e0dae87bf8fca7421acd24acc7b42edc', algorithms: ["HS256"] })
+,permissionCheck(), (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
   try {
     const redeemCode = req.params.redeemCode;
     const result = airdropService.getAirdropJobByRedeemCode(redeemCode);
@@ -69,7 +94,8 @@ router.get("/:redeemCode", (req: Request<{ redeemCode: string }, {}, {}>, res: R
 });
 
 
-router.put("/:redeemCode", (req: Request<{ redeemCode: string }, {}, UpdateAirdropJobDto>, res: Response<ApiReponseData<AirdropJob>>) => {
+router.put("/:redeemCode", expressjwt({ secret: 'dfffc72c84204af3147e2998255cb8082837b8fcc2d6969965afce1bfb91b39053256a7c78e4d7b0ad2290f4740467e4e0dae87bf8fca7421acd24acc7b42edc', algorithms: ["HS256"] })
+,permissionCheck(), (req: Request<JwtItem>, res: Response<ApiReponseData<AirdropJob>>) => {
   try {
     const redeemCode = req.params.redeemCode;
     updateAirdropJobDto.parse(req.body);
@@ -84,7 +110,8 @@ router.put("/:redeemCode", (req: Request<{ redeemCode: string }, {}, UpdateAirdr
   }
 });
 
-router.delete("/:redeemCode", (req: Request<{ redeemCode: string }, {}, {}>, res: Response<ApiReponseData<undefined>>) => {
+router.delete("/:redeemCode",expressjwt({ secret: 'dfffc72c84204af3147e2998255cb8082837b8fcc2d6969965afce1bfb91b39053256a7c78e4d7b0ad2290f4740467e4e0dae87bf8fca7421acd24acc7b42edc', algorithms: ["HS256"] })
+,permissionCheck(),  (req: Request<JwtItem>, res: Response<ApiReponseData<undefined>>) => {
   try {
     const redeemCode = req.params.redeemCode;
     const result = airdropService.deleteAirdropJob(redeemCode);
